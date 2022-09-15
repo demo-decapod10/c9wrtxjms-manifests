@@ -1,0 +1,43 @@
+# Source: cluster-api-aws/templates/job-post.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: c9wrtxjms-capi-aws-post
+  namespace: c9wrtxjms
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "5"
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  template:
+    metadata:
+      name: c9wrtxjms-capi-aws
+    spec:
+      serviceAccountName: c9wrtxjms-capi-aws
+      containers:
+      - name: generate-worker-machines
+        image: "ghcr.io/openinfradev/python_kubectl_argo:v1.1.0"
+        imagePullPolicy: IfNotPresent
+        command:
+        - timeout
+        - 20m
+        - /generate_worker_machines.py
+        - c9wrtxjms
+        - c9wrtxjms
+        volumeMounts:
+        - name: vol
+          subPath: mp.raw.yaml
+          mountPath: /mp.raw.yaml
+        - name: vol
+          subPath: md.raw.yaml
+          mountPath: /md.raw.yaml
+        - name: vol
+          subPath: generate_worker_machines.py
+          mountPath: /generate_worker_machines.py
+
+      volumes:
+      - name: vol
+        configMap:
+          name: c9wrtxjms-capi-aws
+          defaultMode: 0555
+      restartPolicy: OnFailure
